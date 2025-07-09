@@ -1,11 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDB } from "@/lib/mongoose";
-import { Expense } from "@/models/expense"; 
+import { Expense } from "@/models/expense";
 
 export async function DELETE(req: NextRequest) {
   await connectToDB();
-
 
   const url = new URL(req.url);
   const id = url.pathname.split("/").pop();
@@ -22,7 +20,10 @@ export async function DELETE(req: NextRequest) {
     }
 
     return NextResponse.json({ message: "Deleted successfully" }, { status: 200 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ error: "Unknown error occurred" }, { status: 500 });
   }
 }
