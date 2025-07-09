@@ -1,46 +1,29 @@
+import { NextRequest, NextResponse } from "next/server";
+import { connectToDB } from "@/lib/mongoose";
+import { Expense } from "@/models/expense";
 
+export async function DELETE(req: NextRequest) {
+  await connectToDB();
 
-import { NextRequest, NextResponse } from "next/server"
-import { connectToDB } from "@/lib/mongoose"
-import { Expense } from "@/models/expense"
+  const url = new URL(req.url);
+  const id = url.pathname.split("/").pop();
 
-
-export async function GET() {
-  try {
-    await connectToDB()
-    const expenses = await Expense.find().sort({ date: -1 })
-    return NextResponse.json(expenses, { status: 200 })
-  } catch (error) {
-    console.error("GET Error:", error)
-    return NextResponse.json({ error: "Failed to fetch expenses" }, { status: 500 })
+  if (!id) {
+    return NextResponse.json({ error: "Missing ID" }, { status: 400 });
   }
-}
 
-
-export async function POST(req: NextRequest) {
   try {
-    await connectToDB()
-    const body = await req.json()
+    const deletedExpense = await Expense.findByIdAndDelete(id);
 
-    const { title, amount, category, date } = body
-
-    if (!title || !amount || !category || !date) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      )
+    if (!deletedExpense) {
+      return NextResponse.json({ error: "Expense not found" }, { status: 404 });
     }
 
-    const newExpense = await Expense.create({
-      title,
-      amount,
-      category,
-      date,
-    })
-
-    return NextResponse.json(newExpense, { status: 201 })
-  } catch (error) {
-    console.error("POST Error:", error)
-    return NextResponse.json({ error: "Failed to create expense" }, { status: 500 })
+    return NextResponse.json({ message: "Deleted successfully" }, { status: 200 });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ error: "Unknown error occurred" }, { status: 500 });
   }
 }
